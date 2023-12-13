@@ -1,6 +1,8 @@
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
+import matplotlib.pyplot as plt
+
 
 data = pd.read_csv('combined_df.csv')
 
@@ -25,6 +27,25 @@ cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
 # Create a reverse map of indices and movie titles
 indices = pd.Series(data.index, index=data['title']).drop_duplicates()
 
+def figure_display(title):
+    title_to_find = title
+    movie_id=0
+    # Check if the title exists in the DataFrame
+    if title_to_find in data['title'].values:
+        # Find the movieId for the movie with the given title
+        movie_id = data.loc[data['title'] == title_to_find, 'movieId'].values[0]
+        print(f"The movieId for '{title_to_find}' is: {movie_id}")
+    else:
+        print(f"No movie found with title '{title_to_find}'")
+    feature_names = tfidf_vectorizer.get_feature_names_out()
+    first_document= tfidf_matrix[movie_id]
+    first_document = first_document.toarray().flatten()
+    plt.figure(figsize=(10, 6))
+    plt.barh(feature_names, first_document, align='center', alpha=0.7)
+    plt.xlabel('TF-IDF Value')
+    plt.title('TF-IDF for First Document')
+    plt.gca().invert_yaxis()  # Invert y-axis to display highest values on top
+    plt.show()
 
 def recommend_movies_with_scores(title, cosine_sim=cosine_sim, df=data, indices=indices, top_n=10):
     # Convert the input title to lowercase for case-insensitive matching
@@ -73,11 +94,13 @@ def main():
                     print(f"{movie}: {score:.3f}")
                     totalscore+=score
                 print(f"Similarity Score Accuracy: {round((totalscore/10)*100)}%")
+                figure_display(user_input)
             else:
                 print("No recommendations found.")
         except KeyError:
             print("Movie not found. Please try another title.")
         print("\n")
+
 
 
 if __name__ == "__main__":
